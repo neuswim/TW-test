@@ -5,24 +5,49 @@
 #include <fstream>
 #include <algorithm>
 
-//overwrite the instream for struct of item
+/* 
+ * @name : #overwrite
+ * @function : overite ifstream for item
+ * @param<IN> :
+ * @return : 
+ */
 ifstream &operator>>(ifstream &inf, item &it)
 {
 	inf>>it.code>>it.name>>it.type>>it.price>>it.unit>>it.buyCnt
 		>>it.giveCnt>>it.discount;
 }
 
+
+/* 
+ * @name : #constructor
+ * @function : construct an object
+ * @param<IN> :
+ * @return : 
+ */
 Goods::Goods()
 {
 	this->privilege = 0;
 }
 
 
+/* 
+ * @name : setPrivilege
+ * @function : set the member of privilege
+ * @param<IN> p : privilege type (1=two-for-one, 0=)
+ * @return : 
+ */
 void Goods::setPrivilege(int p)
 {
 	this->privilege = p;
 }
 
+
+/* 
+ * @name : loadItemInformation
+ * @function : load item information from file
+ * @param<IN> filepath : path of the item info file
+ * @return : 0=success  -1=error occur
+ */
 int Goods::loadItemInformation(const char* filepath)
 {
 	ifstream fin(filepath, ios::in);
@@ -39,6 +64,16 @@ int Goods::loadItemInformation(const char* filepath)
 	return 0;
 }
 
+
+/* 
+ * @name : display
+ * @function : display the cash list
+ * @param<IN> cartList : bar code of bought items and each item's quantity
+ *			  itemPrices : final prices of each item
+ *			  giveItems : two-for-one item and its quantity
+ *			  saveDiscount : discount item and its save money
+ * @return : 
+ */
 void Goods::display(map<string, int>& cartList, map<string, float>& itemPrices, 
 		map<string, int>& giveItems, map<string, float>& saveDiscount)
 {
@@ -70,7 +105,13 @@ void Goods::display(map<string, int>& cartList, map<string, float>& itemPrices,
 }
 
 
-float Goods::calculate(map<string, int>& codeList)
+/* 
+ * @name : calculate
+ * @function : calulate each item's final price by privilege rules
+ * @param<IN> codeList : bar code of bought items and each item's quantity
+ * @return : 
+ */
+void Goods::calculate(map<string, int>& codeList)
 {
 	map<string, float> itemPrices;
 	map<string, int> giveItems;
@@ -78,8 +119,12 @@ float Goods::calculate(map<string, int>& codeList)
 
 	map<string, int>::iterator iter;
 	for(iter = codeList.begin(); iter != codeList.end(); ++iter) {
-		bool give = false;
-		item it = this->gmap[iter->first];
+		string barCode = iter->first;
+		if(this->gmap.count(barCode) == 0) {
+			cerr<<"The item of "<<barCode<<" has not been registered."<<endl;
+			continue;
+		}
+		item it = this->gmap[barCode];
 		float cost = iter->second * it.price;
 		float giftCost = 0;
 		float discountCost = 0;
@@ -87,11 +132,9 @@ float Goods::calculate(map<string, int>& codeList)
 			int total = it.buyCnt + it.giveCnt;
 			if(iter->second >= total) {
 				giftCost = (iter->second - iter->second/total) * it.price;
-				//giveItems.insert(pair<string, int>(iter->first, iter->second/total));
 			}
 		}
 		if(it.discount != 1.0) {
-			//saveDiscount.insert(pair<string, float>(iter->first, cost - cost*it.discount));
 			discountCost = cost * it.discount;
 		}
 
@@ -113,11 +156,17 @@ float Goods::calculate(map<string, int>& codeList)
 		itemPrices.insert(pair<string, float>(iter->first, cost));
 	}
 	display(codeList, itemPrices, giveItems, saveDiscount);
-
-	return 0;
 }
 
 
+/* 
+ * @name : insertItems
+ * @function : insert bar code to code list and record each quantity
+ * @param<IN> codeList : bar code of bought items and each item's quantity
+ *			  code : bar code
+ *			  cnt : quantity
+ * @return : 
+ */
 void Goods::insertItems(map<string, int>& codeList, string code, int cnt)
 {
 	if(codeList.count(code) > 0)
@@ -127,11 +176,14 @@ void Goods::insertItems(map<string, int>& codeList, string code, int cnt)
 }
 
 
-int Goods::settleCounts()
+/* 
+ * @name : settleCounts
+ * @function : do settlement for accounts 
+ * @param<IN> sline : input json of cart
+ * @return : 
+ */
+void Goods::settleAccounts(string sline)
 {
-	string sline;
-	while(cin>>sline) {
-
 	json::Value v = json::Deserialize(sline);
 	if(v.GetType() == json::ObjectVal) {
 		json::Object cartObj = v.ToObject();
@@ -159,7 +211,6 @@ int Goods::settleCounts()
 		}
 	} else {
 		cerr<<"input data is not a json format"<<endl;
-	}
 	}
 }
 

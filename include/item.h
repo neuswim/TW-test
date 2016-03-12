@@ -6,6 +6,7 @@
 #include <map>
 using namespace std;
 
+//define the struct of item
 typedef struct ITEM {
 	string code; //bar code of the item
 	string name; //name of the item
@@ -20,22 +21,21 @@ typedef struct ITEM {
 
 class Goods {
 private:
-	map<string, item> gmap;
-	int privilege; //0=discount, 1=two-for-one
+	map<string, item> gmap; //item code -> item info
+	int privilege; //1=two-for-one, 2=discount
 
 	void insertItems(map<string, int>& codeList, string code, int cnt);
-	float calculate(map<string, int>& codeList);
+	void calculate(map<string, int>& codeList);
 	void display(map<string, int>& cartList, map<string, float>& itemPrices, 
 			map<string, int>& giveItems, map<string, float>& saveDiscount);
 
 public:
 	Goods();
-	void setPrivilege(int p);
-	int loadItemInformation(const char* filepath);
-	int settleCounts();
+	void setPrivilege(int p); //set the privilege as discount/two-for-one
+	int loadItemInformation(const char* filepath); //load item info from file
+	void settleAccounts(string sline); //do settlement for accounts
 
 	friend ifstream &operator>>(ifstream &inf, item &it);
 };
 
-
-#endif
+#endif /* _ITEM_H_ */
